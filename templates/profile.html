@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+{% include "author_card.html" %}
+{% load thumbnail %}
+
+            <div class="col-md-9">
+                {% for post in page %}
+                    {% include "post_item.html" with post=post %}
+                {% endfor %}
+            </div>
+
+{% include "paginator.html" %}
+</main>
+{% endblock %}
