@@ -3,7 +3,6 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 
-from tests.fixtures.fixture_user import user
 from .forms import PostForm, CommentForm
 
 from .models import Group, Post, Comment, Follow
@@ -28,16 +27,15 @@ def group_posts(request, slug):
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
 
-    return render(request, "group.html",
-                  {"page": page,
-                   "group": group, 'posts': posts})
+    return render(request, 'group.html',
+                  {'page': page, 'group': group, 'posts': posts})
 
 
 @login_required
 def new_post(request):
     form = PostForm(request.POST or None,
                     files=request.FILES or None)
-    if request.method == "POST":
+    if request.method == 'POST':
         form = PostForm(request.POST or None,
                         files=request.FILES or None)
         if form.is_valid():
@@ -45,7 +43,7 @@ def new_post(request):
             post.author = request.user
             post.save()
             return redirect('index')
-    return render(request, "new.html", {"form": form})
+    return render(request, 'new.html', {'form': form})
 
 
 def profile(request, username):
@@ -56,15 +54,15 @@ def profile(request, username):
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
     if request.user.is_authenticated:
-        following = Follow.objects.filter(user=request.user, author=profile).exists()
-        #__import__('pdb').set_trace()
+        following = Follow.objects.filter(user=request.user,
+                                          author=profile).exists()
     else:
         following = False
 
     return render(request, 'profile.html',
                   {'profile': profile, 'counter_post': counter_post,
-                   "page": page,
-                   "following": following})
+                   'page': page,
+                   'following': following})
 
 
 def post_view(request, username, post_id):
@@ -101,18 +99,18 @@ def post_edit(request, username, post_id):
 def page_not_found(request, exception):
     return render(
         request,
-        "misc/404.html",
-        {"path": request.path},
+        'misc/404.html',
+        {'path': request.path},
         status=404
     )
 
 
 def server_error(request):
-    return render(request, "misc/500.html", status=500)
+    return render(request, 'misc/500.html', status=500)
 
 
 @login_required
-def add_comment(request,  username, post_id):
+def add_comment(request, username, post_id):
     form = CommentForm(request.POST or None)
     post = get_object_or_404(Post, id=post_id, author=request.user)
     if form.is_valid():
@@ -120,8 +118,8 @@ def add_comment(request,  username, post_id):
         comment.author = request.user
         comment.post = post
         comment.save()
-        return redirect("post", username, post_id)
-    return render(request, "comments.html", {"form": form, 'post': post})
+        return redirect('post', username, post_id)
+    return render(request, 'comments.html', {'form': form, 'post': post})
 
 
 @login_required
