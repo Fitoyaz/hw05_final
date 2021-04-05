@@ -8,7 +8,6 @@ from django.urls import reverse
 
 from posts.forms import PostForm
 from posts.models import Group, Post, Comment
-from posts.tests.test_follow import PostPagesTests
 
 User = get_user_model()
 
