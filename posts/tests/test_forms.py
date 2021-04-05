@@ -7,7 +7,8 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from posts.forms import PostForm
-from posts.models import Group, Post
+from posts.models import Group, Post, Comment
+from posts.tests.test_follow import PostPagesTests
 
 User = get_user_model()
 
@@ -34,6 +35,7 @@ class TaskCreateFormTests(TestCase):
         )
         # Создаем форму, если нужна проверка атрибутов
         cls.form = PostForm()
+        cls.authorized_client = Client()
 
     @classmethod
     def tearDownClass(cls):
@@ -46,12 +48,11 @@ class TaskCreateFormTests(TestCase):
         self.guest_client = Client()
         # Создаем авторизованый клиент
         self.user = User.objects.create_user(username='RuslanSitnov')
-        self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
     def test_create_task(self):
-        """Валидная форма создает запись в Task."""
-        # Подсчитаем количество записей в Task
+        """Валидная форма создает запись"""
+        # Подсчитаем количество записей
         tasks_count = Post.objects.count()
 
         form_data = {
@@ -71,3 +72,16 @@ class TaskCreateFormTests(TestCase):
                 text='Тестовый текст'
             ).exists()
         )
+
+    def test_check_authorized_user_can_commens_post(self):
+        """ Авторизованный клиент может оставлять комментарии """
+        Comment.objects.create(text='Тестовый камментарий',
+                               author=self.user, post=self.post)
+        response = TaskCreateFormTests.authorized_client.get(
+            reverse(
+                'post', kwargs={'username': self.user.username,
+                                'post_id': self.post.id}
+            )
+        )
+        comment = response.context['comments'][0].author
+        self.assertEqual(comment, self.user)

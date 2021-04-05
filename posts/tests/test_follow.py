@@ -60,17 +60,3 @@ class PostPagesTests(TestCase):
             reverse('follow_index'))
         check_post = response.context['page'].object_list
         self.assertFalse(check_post)
-
-    # Блок комментариев
-    def test_check_authorized_user_can_commens_post(self):
-        """ Авторизованный клиент может оставлять комментарии """
-        Comment.objects.create(text='Тестовый камментарий',
-                               author=self.user, post=self.post)
-        response = PostPagesTests.authorized_client.get(
-            reverse(
-                'post', kwargs={'username': self.user.username,
-                                'post_id': self.post.id}
-            )
-        )
-        comment = response.context['comments'][0].author
-        self.assertEqual(comment, self.user)

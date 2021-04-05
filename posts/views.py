@@ -53,11 +53,9 @@ def profile(request, username):
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
-    if request.user.is_authenticated:
-        following = Follow.objects.filter(user=request.user,
-                                          author=profile).exists()
-    else:
-        following = False
+    following = request.user.is_authenticated and \
+                Follow.objects.filter(user=request.user,
+                                      author=profile).exists()
 
     return render(request, 'profile.html',
                   {'profile': profile, 'counter_post': counter_post,
@@ -68,8 +66,8 @@ def profile(request, username):
 def post_view(request, username, post_id):
     profile = get_object_or_404(User, username=username)
     post = get_object_or_404(Post, id=post_id)
-    comments = Comment.objects.filter(post__id=post_id)
-    form = CommentForm(request.POST or None)
+    comments = Comment.objects.filter(post=post)
+    form = CommentForm()
     context = {
         'post': post,
         'profile': profile,
@@ -82,16 +80,12 @@ def post_view(request, username, post_id):
 @login_required
 def post_edit(request, username, post_id):
     post = get_object_or_404(Post, id=post_id, author=request.user)
-    author = get_object_or_404(User, username=username)
-    if request.method == 'GET':
-        form = PostForm(request.POST or None,
-                        files=request.FILES or None, instance=post)
-
-    else:
-        form = PostForm(request.POST, instance=post)
+    form = PostForm(request.POST or None,
+                    files=request.FILES or None, instance=post)
+    if request.method == 'POST':
         if form.is_valid():
             form.save()
-        return redirect('post', username=author.username, post_id=post.id)
+        return redirect('post', username=post.author.username, post_id=post.id)
 
     return render(request, 'new.html', {'form': form, 'post': post})
 
@@ -118,17 +112,13 @@ def add_comment(request, username, post_id):
         comment.author = request.user
         comment.post = post
         comment.save()
-        return redirect('post', username, post_id)
-    return render(request, 'comments.html', {'form': form, 'post': post})
+    return redirect('post', username, post_id)
 
 
 @login_required
 def follow_index(request):
     """Страница постов подписанных авторов."""
-    user = get_object_or_404(User, username=request.user)
-    follower = user.follower.all().values('author')
-    post_follower = Post.objects.filter(author__in=follower).order_by(
-        '-pub_date')
+    post_follower = Post.objects.filter(author__following__user=request.user)
     paginator = Paginator(post_follower, 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
